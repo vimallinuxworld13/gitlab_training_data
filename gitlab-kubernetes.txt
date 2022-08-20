@@ -7,6 +7,15 @@ https://docs.gitlab.com/ee/user/clusters/agent/
 
 
 https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
+
+# aws cli download
+
+# aws configure
+access key
+secret key
+region : ap-south-1
+
+
 aws sts get-caller-identity
 aws eks --region region update-kubeconfig --name cluster_name
 
@@ -29,6 +38,19 @@ runners:
     [[runners]]
       [runners.kubernetes]
         image = "ubuntu:16.04"
+        
+       
+       
+# helm repo add gitlab https://charts.gitlab.io
+# helm repo update
+# helm upgrade --install eks-agent gitlab/gitlab-agent \
+    --namespace gitlab-agent \
+    --create-namespace \
+    --set image.tag=v15.3.0 \
+    --set config.token=H35URFLT1fTYdGvzu9tGuAvhXbZCEG_52meHR7o2zUxowxWt4A \
+    --set config.kasAddress=wss://kas.gitlab.com
+    
+    
 
 
 helm install --namespace <NAMESPACE> --name gitlab-runner -f <CONFIG_VALUES_FILE> gitlab/gitlab-runner
