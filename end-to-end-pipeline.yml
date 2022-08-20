@@ -1,0 +1,90 @@
+stages:
+  - test
+  - build
+  - deploy staging
+  - automated testing
+  - deploy production
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/employee-image:$CI_COMMIT_REF_SLUG
+  STAGING_APP: emp-portal-staging
+  PRODUCTION_APP: emp-portal-production
+  HEROKU_STAGING: "registry.heroku.com/$STAGING_APP/web"
+  HEROKU_PRODUCTION: "registry.heroku.com/$PRODUCTION_APP/web"
+
+lint_test:
+  image: python:3.8.0-slim
+  stage: test
+  before_script:
+    - pip install flake8-html
+  script:
+    - flake8 --format=html --htmldir=flake_reports/
+  artifacts:
+    when: always
+    paths:
+      - flake_reports/
+
+pytest:
+  image: python:3.8.0-slim
+  stage: test
+  before_script:
+    - pip install pytest-html
+    - pip install -r requirements.txt
+  script:
+    - pytest --html=pytest_reports/pytest-report.html --self-contained-html
+  artifacts:
+    when: always
+    paths:
+      - pytest_reports/
+
+build:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: build
+  before_script: 
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_TAG .
+    - docker images
+    - docker push $IMAGE_TAG
+
+deploy_stage:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: deploy staging
+  before_script: 
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $IMAGE_TAG
+    - docker tag  $IMAGE_TAG $HEROKU_STAGING
+    - docker login -u _ -p $HEROKU_STAGING_API_KEY registry.heroku.com
+    - docker push $HEROKU_STAGING
+    - docker run --rm -e HEROKU_API_KEY=$HEROKU_STAGING_API_KEY wingrunr21/alpine-heroku-cli container:release web --app $STAGING_APP
+    - echo "App deployed to stagig server at https://$STAGING_APP.herokuapp.com/"
+
+test_stage:
+  image: alpine
+  stage: automated testing
+  before_script:
+    - apk --no-cache add curl
+  script:
+    - curl https://$STAGING_APP.herokuapp.com/ | grep "Employee Data"
+  only:
+    - main
+
+deploy_production:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: deploy production
+  before_script: 
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $IMAGE_TAG
+    - docker tag  $IMAGE_TAG $HEROKU_PRODUCTION
+    - docker login -u _ -p $HEROKU_PRODUCTION_API_KEY registry.heroku.com
+    - docker push $HEROKU_PRODUCTION
+    - docker run --rm -e HEROKU_API_KEY=$HEROKU_PRODUCTION_API_KEY wingrunr21/alpine-heroku-cli container:release web --app $PRODUCTION_APP
+    - echo "App deployed to production server at https://$PRODUCTION_APP.herokuapp.com/"Project - deploy to production
