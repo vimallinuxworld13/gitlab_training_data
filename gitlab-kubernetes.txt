@@ -1,0 +1,35 @@
+https://docs.gitlab.com/ee/user/infrastructure/clusters/connect/new_eks_cluster.html#register-the-agent
+
+
+https://docs.gitlab.com/ee/user/clusters/agent/
+
+
+
+
+https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
+aws sts get-caller-identity
+aws eks --region region update-kubeconfig --name cluster_name
+
+kubectl get pods --kubeconfig ./.kube/config
+
+https://docs.gitlab.com/runner/install/kubernetes.html
+
+https://stackoverflow.com/questions/65098584/kubectl-with-gitlab-eks-cluster-error-you-must-be-logged-in-to-the-server-unau
+
+
+
+helm repo add gitlab https://charts.gitlab.io
+helm init
+
+https://docs.gitlab.com/runner/install/kubernetes.html#configuring-gitlab-runner-using-the-helm-chart
+
+notepad values.yaml
+runners:
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        image = "ubuntu:16.04"
+
+
+helm install --namespace <NAMESPACE> --name gitlab-runner -f <CONFIG_VALUES_FILE> gitlab/gitlab-runner
+
